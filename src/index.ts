@@ -1,32 +1,57 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
+export default <ExportedHandler<{ PASSWORD: string }>>{
+  async fetch(request, env) {
+    console.log(request, env);
+    const url = new URL(request.url);
 
-export interface Env {
-	// Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
-	// MY_KV_NAMESPACE: KVNamespace;
-	//
-	// Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
-	// MY_DURABLE_OBJECT: DurableObjectNamespace;
-	//
-	// Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
-	// MY_BUCKET: R2Bucket;
-	//
-	// Example binding to a Service. Learn more at https://developers.cloudflare.com/workers/runtime-apis/service-bindings/
-	// MY_SERVICE: Fetcher;
-	//
-	// Example binding to a Queue. Learn more at https://developers.cloudflare.com/queues/javascript-apis/
-	// MY_QUEUE: Queue;
-}
+    const testToken = 'prototype-token-value';
+    const data = [{
+      name: "hello world",
+      url: "https://recommend-me.alkuramshina.workers.dev/"
+    }];
 
-export default {
-	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-		return new Response('Hello World!');
-	},
+    switch (url.pathname) {
+      case "/":
+        return new Response(`/links for unauthorized endpoint; \n/links/auth for basic authorization (token: ${testToken})`);
+
+      case "/links":
+        return Response.json(data);
+
+      case "/links/auth": {
+        const authorization = request.headers.get("Authorization");
+        if (!authorization) {
+          return new Response("You need to authorize.", {
+            status: 401,
+            headers: {
+              // Prompts the user for credentials.
+              "WWW-Authenticate": 'Basic realm="my scope", charset="UTF-8"',
+            },
+          });
+        }
+        const [scheme, token] = authorization.split(" ");
+
+        // The Authorization header must start with Basic, followed by a space.
+        if (!token || scheme !== "Basic") {
+          return new Response("Malformed authorization header.", {
+            status: 400,
+          });
+        }
+
+        // Just a mock for Authorization
+        if (token !== testToken) {
+          return new Response("Unauthorized.", {
+            status: 401,
+          });
+        }
+
+        return Response.json(data, {
+          status: 200,
+          headers: {
+            "Cache-Control": "no-store",
+          },
+        });
+      }
+    }
+
+    return new Response("Not Found.", { status: 404 });
+  },
 };
