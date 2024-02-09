@@ -1,57 +1,43 @@
-export default <ExportedHandler<{ PASSWORD: string }>>{
-  async fetch(request, env) {
-    console.log(request, env);
-    const url = new URL(request.url);
+import { Hono } from 'hono';
+import { authenticationMiddleware } from './middleware';
+import data from './data';
 
-    const testToken = 'prototype-token-value';
-    const data = [{
-      name: "hello world",
-      url: "https://recommend-me.alkuramshina.workers.dev/"
-    }];
+const app = new Hono();
 
-    switch (url.pathname) {
-      case "/":
-        return new Response(`/links for unauthorized endpoint; \n/links/auth for basic authorization (token: ${testToken})`);
+app.onError((error, ctx) => {
+  console.log(error.message);
+  const status = error.message == 'Unauthorized' ? 401 : 500;
 
-      case "/links":
-        return Response.json(data);
+  return ctx.json({
+    error: error.message,
+    status: status
+  }, status);
+});
 
-      case "/links/auth": {
-        const authorization = request.headers.get("Authorization");
-        if (!authorization) {
-          return new Response("You need to authorize.", {
-            status: 401,
-            headers: {
-              // Prompts the user for credentials.
-              "WWW-Authenticate": 'Basic realm="my scope", charset="UTF-8"',
-            },
-          });
-        }
-        const [scheme, token] = authorization.split(" ");
+app.get('/', (ctx) => ctx.text('Hello Cloudflare Workers!'));
 
-        // The Authorization header must start with Basic, followed by a space.
-        if (!token || scheme !== "Basic") {
-          return new Response("Malformed authorization header.", {
-            status: 400,
-          });
-        }
+app.get('/links', authenticationMiddleware, async (ctx) => {
+  const queryData = ctx.req.query();
+  console.log('query:');
+  console.log(queryData);
 
-        // Just a mock for Authorization
-        if (token !== testToken) {
-          return new Response("Unauthorized.", {
-            status: 401,
-          });
-        }
+  return ctx.json(data);
+});
 
-        return Response.json(data, {
-          status: 200,
-          headers: {
-            "Cache-Control": "no-store",
-          },
-        });
-      }
-    }
+app.post('/links', authenticationMiddleware, async (ctx) => {
+  const requestData = await ctx.req.parseBody();
+  console.log('body:');
+  console.log(requestData);
 
-    return new Response("Not Found.", { status: 404 });
-  },
-};
+  const queryData = ctx.req.query();
+  console.log('query:');
+  console.log(queryData);
+
+  return ctx.json(data);
+});
+
+app.notFound((c) => {
+  return c.text('404 Not Found', 404);
+});
+
+export default app;

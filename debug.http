@@ -1,0 +1,25 @@
+GET http://127.0.0.1:8787/links?data=some query data
+Authorization: Basic prototype-token-value
+
+###
+
+POST http://127.0.0.1:8787/links?data=some query data
+Authorization: Basic prototype-token-value
+
+{
+    "data": "some body data"
+}
+
+###
+
+GET http://127.0.0.1:8787/links
+
+###
+
+GET http://127.0.0.1:8787/links
+Authorization: Basic prototype-token-value
+
+###
+
+POST http://127.0.0.1:8787/links
+Authorization: Basic prototype-token-value
