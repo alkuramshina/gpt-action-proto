@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { authenticationMiddleware } from './middleware';
 import data from './data';
+import { LogType, setLogMessage } from './helpers';
 
 const app = new Hono();
 
@@ -18,20 +19,17 @@ app.get('/', (ctx) => ctx.text('Hello Cloudflare Workers!'));
 
 app.get('/links', authenticationMiddleware, async (ctx) => {
   const queryData = ctx.req.query();
-  console.log('query:');
-  console.log(queryData);
+  console.log(setLogMessage(LogType.query, queryData));
 
   return ctx.json(data);
 });
 
 app.post('/links', authenticationMiddleware, async (ctx) => {
   const requestData = await ctx.req.parseBody();
-  console.log('body:');
-  console.log(requestData);
+  console.log(setLogMessage(LogType.body, requestData));
 
   const queryData = ctx.req.query();
-  console.log('query:');
-  console.log(queryData);
+  console.log(setLogMessage(LogType.query, queryData));
 
   return ctx.json(data);
 });
