@@ -1,9 +1,11 @@
-import { Hono } from 'hono';
 import { authenticationMiddleware } from './middleware';
-import data from './data';
+import { watchData } from './data';
 import { LogType, setLogMessage } from './helpers';
+import { swaggerUI } from '@hono/swagger-ui';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { getLinksRoute, mainApiInfo } from './openapi';
 
-const app = new Hono();
+const app = new OpenAPIHono();
 
 app.onError((error, ctx) => {
   console.log(error.message);
@@ -15,13 +17,15 @@ app.onError((error, ctx) => {
   }, status);
 });
 
-app.get('/', (ctx) => ctx.text('Hello Cloudflare Workers!'));
+app.get('/swagger', swaggerUI({ url: '/documentation' }));
+app.doc('/documentation', mainApiInfo);
 
-app.get('/links', authenticationMiddleware, async (ctx) => {
+app.use(getLinksRoute.getRoutingPath(), authenticationMiddleware);
+app.openapi(getLinksRoute, async (ctx) => {
   const queryData = ctx.req.query();
   console.log(setLogMessage(LogType.query, queryData));
 
-  return ctx.json(data);
+  return ctx.json(watchData);
 });
 
 app.post('/links', authenticationMiddleware, async (ctx) => {
@@ -31,7 +35,7 @@ app.post('/links', authenticationMiddleware, async (ctx) => {
   const queryData = ctx.req.query();
   console.log(setLogMessage(LogType.query, queryData));
 
-  return ctx.json(data);
+  return ctx.json(watchData);
 });
 
 app.notFound((c) => {
