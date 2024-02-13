@@ -17,7 +17,7 @@ export const getLinksRoute = createRoute({
 	method: 'get',
 	path: '/links',
 	operationId: 'getLinks',
-	summary: 'A query to get customizable recommendation links based on your inquiry, your needs and the contecxt of your conversation.',
+	summary: 'A query to get customizable recommendation links based on your inquiry, your needs and the context of your conversation.',
 	parameters: [{
 		in: 'query',
 		name: 'data',
@@ -33,9 +33,9 @@ export const getLinksRoute = createRoute({
 			content: {
 				'application/json': {
 					schema: z.array(z.object({
-						url: z.string(),
-						name: z.string(),
-						description: z.string()
+						url: z.string({description: "A recommended url"}),
+						name: z.string({description: "A title for url"}),
+						description: z.string({description: "A description of url content"})
 					}))
 				}
 			}

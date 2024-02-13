@@ -23,3 +23,7 @@ Authorization: Basic prototype-token-value
 
 POST http://127.0.0.1:8787/links
 Authorization: Basic prototype-token-value
+
+###
+
+GET http://127.0.0.1:8787/documentation
